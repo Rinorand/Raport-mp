@@ -1,4 +1,4 @@
-!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -7,31 +7,18 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
-  body{
-    margin:0;font-family:"Segoe UI",sans-serif;
-    background:url('https://upload.wikimedia.org/wikipedia/commons/thumb/6/64/Cell_tower_antenna.jpg/1280px-Cell_tower_antenna.jpg') no-repeat center/cover fixed;
-  }
+  body{margin:0;font-family:"Segoe UI",sans-serif;background:url('https://upload.wikimedia.org/wikipedia/commons/thumb/6/64/Cell_tower_antenna.jpg/1280px-Cell_tower_antenna.jpg') no-repeat center/cover fixed;}
   .overlay{background:rgba(255,255,255,0.92);min-height:100vh;padding:40px 0;}
-  .container{
-    width:90%;max-width:1300px;margin:auto;background:#fff;border-radius:18px;
-    padding:40px;box-shadow:0 12px 30px rgba(0,0,0,0.15);
-  }
+  .container{width:90%;max-width:1300px;margin:auto;background:#fff;border-radius:18px;padding:40px;box-shadow:0 12px 30px rgba(0,0,0,0.15);}
   h1{text-align:center;color:#1e3a8a;margin-bottom:30px;letter-spacing:1px;}
-  form{
-    display:grid;grid-template-columns:repeat(5,1fr);gap:15px;margin-bottom:30px;
-  }
+  form{display:grid;grid-template-columns:repeat(5,1fr);gap:15px;margin-bottom:30px;}
   input,textarea{padding:12px;border-radius:8px;border:1px solid #ccc;font-size:1rem;}
   input[type="file"]{padding:5px;}
-  form button{
-    grid-column:span 5;padding:14px;background:#2563eb;color:#fff;border:none;border-radius:8px;
-    font-size:1.1rem;cursor:pointer;transition:0.2s;
-  }
+  form button{grid-column:span 5;padding:14px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-size:1.1rem;cursor:pointer;transition:0.2s;}
   form button:hover{background:#1e3a8a;}
   .filters{display:flex;gap:10px;margin-bottom:20px;}
   .filters input{flex:1;padding:10px;border-radius:8px;border:1px solid #ccc;}
-  table{
-    width:100%;border-collapse:collapse;border-radius:12px;overflow:hidden;margin-top:20px;
-  }
+  table{width:100%;border-collapse:collapse;border-radius:12px;overflow:hidden;margin-top:20px;}
   th,td{padding:12px;text-align:center;border-bottom:1px solid #e5e7eb;}
   th{background:#1e3a8a;color:#fff;letter-spacing:1px;}
   tr:nth-child(even){background:#f8fafc;}
@@ -40,9 +27,7 @@
   .edit{background:#f59e0b;color:#fff;}
   .delete{background:#dc2626;color:#fff;}
   .btn-group{text-align:center;margin-top:30px;}
-  .btn-group button{
-    padding:12px 20px;border:none;border-radius:8px;margin:0 10px;color:#fff;cursor:pointer;transition:0.2s;
-  }
+  .btn-group button{padding:12px 20px;border:none;border-radius:8px;margin:0 10px;color:#fff;cursor:pointer;transition:0.2s;}
   .excel{background:#16a34a;}
   .excel:hover{background:#15803d;}
   .json{background:#0ea5e9;}
@@ -156,7 +141,6 @@ function edit(i){
   db.splice(i,1); save(); afficher();
 }
 
-// ✅ Demande d'identification avant suppression
 function askLogin(){
   const id = prompt("Entrez votre ID :");
   const mdp = prompt("Entrez votre mot de passe :");
@@ -220,10 +204,10 @@ async function exportPDF(){
   doc.text("Liste des Interventions", 105, 20, {align:'center'});
   doc.setFontSize(12);
   let y = 35;
-  db.forEach(i=>{s
+  db.forEach(i=>{
     doc.text(`${i.date} | ${i.site} | ${i.action} | ${i.tech}`, 20, y);
     y += 8;
-    if(y>280){doc.addPage(); y=30;}
+    if(y>280){ doc.addPage(); y=30;}
   });
   doc.save('Rapport_BTS_Telecom.pdf');
 }
@@ -232,3 +216,4 @@ afficher();
 </script>
 </body>
 </html>
+``
