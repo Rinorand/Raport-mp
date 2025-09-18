@@ -1,0 +1,234 @@
+!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rapport BTS Télécom</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  body{
+    margin:0;font-family:"Segoe UI",sans-serif;
+    background:url('https://upload.wikimedia.org/wikipedia/commons/thumb/6/64/Cell_tower_antenna.jpg/1280px-Cell_tower_antenna.jpg') no-repeat center/cover fixed;
+  }
+  .overlay{background:rgba(255,255,255,0.92);min-height:100vh;padding:40px 0;}
+  .container{
+    width:90%;max-width:1300px;margin:auto;background:#fff;border-radius:18px;
+    padding:40px;box-shadow:0 12px 30px rgba(0,0,0,0.15);
+  }
+  h1{text-align:center;color:#1e3a8a;margin-bottom:30px;letter-spacing:1px;}
+  form{
+    display:grid;grid-template-columns:repeat(5,1fr);gap:15px;margin-bottom:30px;
+  }
+  input,textarea{padding:12px;border-radius:8px;border:1px solid #ccc;font-size:1rem;}
+  input[type="file"]{padding:5px;}
+  form button{
+    grid-column:span 5;padding:14px;background:#2563eb;color:#fff;border:none;border-radius:8px;
+    font-size:1.1rem;cursor:pointer;transition:0.2s;
+  }
+  form button:hover{background:#1e3a8a;}
+  .filters{display:flex;gap:10px;margin-bottom:20px;}
+  .filters input{flex:1;padding:10px;border-radius:8px;border:1px solid #ccc;}
+  table{
+    width:100%;border-collapse:collapse;border-radius:12px;overflow:hidden;margin-top:20px;
+  }
+  th,td{padding:12px;text-align:center;border-bottom:1px solid #e5e7eb;}
+  th{background:#1e3a8a;color:#fff;letter-spacing:1px;}
+  tr:nth-child(even){background:#f8fafc;}
+  tr:hover{background:#e0e7ff;}
+  .actions button{margin:0 3px;padding:6px 10px;border:none;border-radius:5px;font-size:0.9rem;cursor:pointer;}
+  .edit{background:#f59e0b;color:#fff;}
+  .delete{background:#dc2626;color:#fff;}
+  .btn-group{text-align:center;margin-top:30px;}
+  .btn-group button{
+    padding:12px 20px;border:none;border-radius:8px;margin:0 10px;color:#fff;cursor:pointer;transition:0.2s;
+  }
+  .excel{background:#16a34a;}
+  .excel:hover{background:#15803d;}
+  .json{background:#0ea5e9;}
+  .json:hover{background:#0284c7;}
+  .pdf{background:#2563eb;}
+  .pdf:hover{background:#1e3a8a;}
+  .clear{background:#dc2626;}
+  .clear:hover{background:#b91c1c;}
+  img.piece{max-width:60px;max-height:60px;border-radius:5px;}
+</style>
+</head>
+<body>
+<div class="overlay">
+  <div class="container">
+    <h1>📡 Rapport d'Intervention - BTS Télécom</h1>
+
+    <form id="form">
+      <input type="date" id="date" required>
+      <input type="text" id="site" placeholder="Code site" required>
+      <input type="text" id="action" placeholder="Action réalisée" required>
+      <input type="text" id="tech" placeholder="Technicien" required>
+      <input type="file" id="photo" accept="image/*">
+      <button type="submit">Ajouter une intervention</button>
+    </form>
+
+    <div class="filters">
+      <input type="text" id="search" placeholder="🔍 Rechercher par site / technicien / action...">
+    </div>
+
+    <table id="table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Site</th>
+          <th>Action</th>
+          <th>Technicien</th>
+          <th>Photo</th>
+          <th>Options</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <div class="btn-group">
+      <button class="excel" onclick="exportExcel()">📥 Excel</button>
+      <button class="json" onclick="exportJSON()">💾 Historique</button>
+      <button class="pdf" onclick="exportPDF()">📄 PDF</button>
+      <button class="clear" onclick="secureClear()">🗑️ Effacer tout</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let db = JSON.parse(localStorage.getItem('bts_interventions')) || [];
+const form = document.getElementById('form');
+const tbody = document.querySelector('#table tbody');
+const search = document.getElementById('search');
+const validIDs = ["A0371","A0372","A0373"];
+const validPass = "Rino2007";
+
+form.addEventListener('submit', async e=>{
+  e.preventDefault();
+  let photoFile = document.getElementById('photo').files[0];
+  let photoData = "";
+  if(photoFile){
+    photoData = await new Promise(res=>{
+      const reader = new FileReader();
+      reader.onload = ()=>res(reader.result);
+      reader.readAsDataURL(photoFile);
+    });
+  }
+  const data={
+    date:document.getElementById('date').value,
+    site:document.getElementById('site').value,
+    action:document.getElementById('action').value,
+    tech:document.getElementById('tech').value,
+    photo:photoData
+  };
+  db.push(data);
+  save(); form.reset(); afficher();
+});
+
+function afficher(){
+  tbody.innerHTML="";
+  let filt = search.value.toLowerCase();
+  db.filter(i=> i.site.toLowerCase().includes(filt) || i.tech.toLowerCase().includes(filt) || i.action.toLowerCase().includes(filt))
+    .forEach((i,idx)=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML=`
+        <td>${i.date}</td>
+        <td>${i.site}</td>
+        <td>${i.action}</td>
+        <td>${i.tech}</td>
+        <td>${i.photo ? `<img src="${i.photo}" class="piece">` : '—'}</td>
+        <td class="actions">
+          <button class="edit" onclick="edit(${idx})">✏️</button>
+          <button class="delete" onclick="secureRemove(${idx})">🗑️</button>
+        </td>`;
+      tbody.appendChild(tr);
+    });
+}
+
+search.addEventListener('input', afficher);
+
+function edit(i){
+  const x=db[i];
+  document.getElementById('date').value=x.date;
+  document.getElementById('site').value=x.site;
+  document.getElementById('action').value=x.action;
+  document.getElementById('tech').value=x.tech;
+  db.splice(i,1); save(); afficher();
+}
+
+// ✅ Demande d'identification avant suppression
+function askLogin(){
+  const id = prompt("Entrez votre ID :");
+  const mdp = prompt("Entrez votre mot de passe :");
+  if(validIDs.includes(id) && mdp===validPass){ return true; }
+  alert("❌ Identifiants incorrects. Suppression annulée.");
+  return false;
+}
+
+function secureRemove(i){
+  if(askLogin()){
+    if(confirm("Supprimer cette ligne ?")){
+      db.splice(i,1);
+      save(); afficher();
+    }
+  }
+}
+
+function secureClear(){
+  if(askLogin()){
+    if(confirm("Vider toute la base ?")){
+      db=[]; save(); afficher();
+    }
+  }
+}
+
+function save(){ localStorage.setItem('bts_interventions',JSON.stringify(db)); }
+
+function exportExcel(){
+  const ws = XLSX.utils.json_to_sheet(db.map(i=>({Date:i.date,Site:i.site,Action:i.action,Technicien:i.tech})));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Interventions');
+  XLSX.writeFile(wb,'Rapports_BTS_Telecom.xlsx');
+}
+
+function exportJSON(){
+  const blob = new Blob([JSON.stringify(db,null,2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'historique_bts.json'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+async function exportPDF(){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  doc.setFillColor(30,58,138);
+  doc.rect(0,0,210,297,'F');
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(28);
+  doc.text("Rapport d'Intervention", 105, 80, {align:'center'});
+  doc.setFontSize(20);
+  doc.text("BTS Télécom", 105, 95, {align:'center'});
+  doc.setFontSize(14);
+  doc.text("Nom de l'étudiant : ____________________", 20, 150);
+  doc.text("Établissement : ISGEI", 20, 160);
+  doc.text("Année : 2025", 20, 170);
+  doc.text("Généré le : "+new Date().toLocaleDateString(), 20, 180);
+  doc.addPage();
+  doc.setTextColor(0,0,0);
+  doc.setFontSize(16);
+  doc.text("Liste des Interventions", 105, 20, {align:'center'});
+  doc.setFontSize(12);
+  let y = 35;
+  db.forEach(i=>{s
+    doc.text(`${i.date} | ${i.site} | ${i.action} | ${i.tech}`, 20, y);
+    y += 8;
+    if(y>280){doc.addPage(); y=30;}
+  });
+  doc.save('Rapport_BTS_Telecom.pdf');
+}
+
+afficher();
+</script>
+</body>
+</html>
